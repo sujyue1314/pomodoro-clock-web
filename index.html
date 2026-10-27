@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-material="liquid_glass">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>番茄钟</title>
+    <script type="module" crossorigin src="/assets/main-Blt7ApOy.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/menu-COn12ifz.js">
+    <link rel="stylesheet" crossorigin href="/assets/menu-DURpn6do.css">
+  </head>
+  <body>
+    <div id="app" class="app mini" data-phase="work">
+      <!-- 迷你胶囊 -->
+      <div id="pill" class="pill">
+        <span id="pill-phase" class="pill-phase">专注</span>
+        <span id="pill-time" class="pill-time" aria-live="polite" aria-atomic="true">25:00</span>
+        <button id="btn-toggle-run" class="icon-btn" title="开始/暂停" aria-label="开始或暂停">
+          <svg id="icon-play" viewBox="0 0 16 16" width="15" height="15"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>
+          <svg id="icon-pause" viewBox="0 0 16 16" width="15" height="15" style="display:none"><path d="M3.5 2.5h3.2v11H3.5zM9.3 2.5h3.2v11H9.3z" fill="currentColor"/></svg>
+        </button>
+        <!-- v11：胶囊底部 2px 进度条（snapshot remaining/total 驱动，前端不自算）；
+             左右 26px inset = 胶囊底边平段弦长（半径38圆角外区域不可见） -->
+        <div class="pill-progress" role="progressbar" aria-label="本阶段进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="pill-progress-bar"></div></div>
+      </div>
+
+      <!-- 展开面板 -->
+      <div id="panel" class="panel">
+        <header id="panel-head" class="panel-head">
+          <div class="panel-timer">
+            <div id="panel-phase" class="panel-phase">专注</div>
+            <div id="panel-time" class="panel-time" aria-live="polite" aria-atomic="true">25:00</div>
+            <p id="pause-note" class="pause-note" hidden></p>
+            <div class="progress-track" role="progressbar" aria-label="本阶段进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-bar" class="progress-bar"></div></div>
+            <div id="cycle-dots" class="cycle-dots" aria-label="本组番茄进度"></div>
+            <input id="focus-label" class="focus-label" type="text" maxlength="40" placeholder="正在做（可选）" aria-label="正在做" />
+          </div>
+        </header>
+
+        <div class="controls">
+          <button id="btn-primary" class="btn btn-primary">开始</button>
+          <button id="btn-reset" class="btn">重置</button>
+          <button id="btn-switch" class="btn btn-switch" title="跳过本阶段，本次不计入" aria-label="跳过本阶段，本次不计入">
+            <span class="switch-label">跳过</span>
+          </button>
+        </div>
+
+        <section class="stats">
+          <div class="section-caption">统计</div>
+          <div class="stat-cards">
+            <div class="stat-card">
+              <div id="stat-today-count" class="stat-num">0</div>
+              <div class="stat-label">今日 / 目标</div>
+            </div>
+            <div class="stat-card">
+              <div id="stat-today-min" class="stat-num">0</div>
+              <div class="stat-label">专注分钟</div>
+            </div>
+            <div class="stat-card">
+              <div id="stat-streak" class="stat-num">0</div>
+              <div class="stat-label">连续天数</div>
+            </div>
+          </div>
+          <div class="chart-head">
+            <div class="seg-switch" role="group" aria-label="统计范围">
+              <button id="range-week" class="seg-opt active">周</button>
+              <button id="range-month" class="seg-opt">月</button>
+            </div>
+            <div class="chart-title-wrap">
+              <button id="month-prev" class="month-nav" aria-label="上个月" hidden>‹</button>
+              <span id="chart-title" class="chart-title">本周</span>
+              <button id="month-next" class="month-nav" aria-label="下个月" hidden>›</button>
+            </div>
+            <div class="seg-switch" role="group" aria-label="统计单位">
+              <button id="unit-count" class="seg-opt active">个数</button>
+              <button id="unit-min" class="seg-opt">分钟</button>
+            </div>
+          </div>
+          <div class="week-chart" id="week-chart" aria-label="本周每日番茄数"></div>
+          <div class="month-chart" id="month-chart" aria-label="当月每日番茄热力" hidden></div>
+        </section>
+
+        <div class="panel-foot">
+          <button id="btn-settings" class="foot-settings" type="button" aria-label="设置">设置</button>
+          <button id="btn-collapse" class="collapse-btn" aria-label="收起">
+            <svg viewBox="0 0 12 7" width="12" height="7"><path d="M1 6l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+
+        <!-- 设置抽屉：从右滑入覆盖面板 -->
+        <div id="drawer" class="drawer">
+          <div class="drawer-head">
+            <button id="btn-drawer-back" class="icon-btn" aria-label="返回">
+              <svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <span class="drawer-title">设置</span>
+          </div>
+          <section class="settings">
+            <div class="section-caption">时长（分钟）</div>
+            <div class="group-card">
+              <div class="setting-row">
+                <span>工作</span>
+                <span class="stepper">
+                  <button class="step-btn" data-step="work:-1" aria-label="减少工作时长">−</button>
+                  <span class="stepper-val"><input id="input-work" type="number" inputmode="numeric" min="1" max="120" value="25" aria-label="工作时长（分钟）" /></span>
+                  <button class="step-btn" data-step="work:1" aria-label="增加工作时长">+</button>
+                </span>
+              </div>
+              <div class="setting-row">
+                <span>短休息</span>
+                <span class="stepper">
+                  <button class="step-btn" data-step="short:-1" aria-label="减少短休息时长">−</button>
+                  <span class="stepper-val"><input id="input-short" type="number" inputmode="numeric" min="1" max="60" value="5" aria-label="短休息时长（分钟）" /></span>
+                  <button class="step-btn" data-step="short:1" aria-label="增加短休息时长">+</button>
+                </span>
+              </div>
+              <div class="setting-row">
+                <span>长休息</span>
+                <span class="stepper">
+                  <button class="step-btn" data-step="long:-1" aria-label="减少长休息时长">−</button>
+                  <span class="stepper-val"><input id="input-long" type="number" inputmode="numeric" min="1" max="60" value="15" aria-label="长休息时长（分钟）" /></span>
+                  <button class="step-btn" data-step="long:1" aria-label="增加长休息时长">+</button>
+                </span>
+              </div>
+            </div>
+            <div class="section-caption">循环 · 目标</div>
+            <div class="group-card">
+              <div class="setting-row">
+                <span>长休间隔（个）</span>
+                <span class="stepper">
+                  <button class="step-btn" data-step="every:-1" aria-label="减少长休间隔">−</button>
+                  <span class="stepper-val"><input id="input-every" type="number" inputmode="numeric" min="2" max="10" value="4" aria-label="长休间隔（个）" /></span>
+                  <button class="step-btn" data-step="every:1" aria-label="增加长休间隔">+</button>
+                </span>
+              </div>
+              <!-- 08-16：每日目标（默认 8 个）——周柱/月格刻度锚点 + 周图目标虚线；分钟口径自动换算=个数×工作时长。
+                   并入循环卡不设独立节：回到 v11 布局不动点（386px < 可用 401px），免滚动免加高 -->
+              <div class="setting-row">
+                <span>每日目标（个）</span>
+                <span class="stepper">
+                  <button class="step-btn" data-step="goal:-1" aria-label="减少每日目标">−</button>
+                  <span class="stepper-val"><input id="input-goal" type="number" inputmode="numeric" min="1" max="20" value="8" aria-label="每日目标（个）" /></span>
+                  <button class="step-btn" data-step="goal:1" aria-label="增加每日目标">+</button>
+                </span>
+              </div>
+              <div class="setting-row toggle-row">
+                <span>自动开始下一阶段</span>
+                <button id="toggle-auto-start" class="toggle" role="switch" aria-checked="false" aria-label="自动开始下一阶段">
+                  <span class="toggle-knob"></span>
+                </button>
+              </div>
+              <div class="setting-row export-row">
+                <span id="export-label">导出统计</span>
+                <button id="btn-export" type="button" aria-labelledby="export-label">导出</button>
+                <p id="export-path" class="export-path" hidden></p>
+              </div>
+              <div class="setting-row toggle-row">
+                <span>完成提示音</span>
+                <button id="toggle-sound" class="toggle on" role="switch" aria-checked="true" aria-label="完成提示音">
+                  <span class="toggle-knob"></span>
+                </button>
+              </div>
+            </div>
+            <div class="section-caption">外观</div>
+            <div class="group-card">
+              <div class="setting-row theme-row">
+                <span>主题</span>
+                <div class="theme-switch" role="group" aria-label="主题">
+                  <button data-theme-opt="light" class="theme-opt active">浅色</button>
+                  <button data-theme-opt="dark" class="theme-opt">深色</button>
+                </div>
+              </div>
+              <div class="setting-row material-row">
+                <span>材质</span>
+                <div class="theme-switch" role="group" aria-label="材质">
+                  <button data-material-opt="classic" class="material-opt">经典</button>
+                  <button data-material-opt="liquid_glass" class="material-opt active">液态玻璃</button>
+                </div>
+              </div>
+              <!-- 08-16 v16：三阶段自定义配色；v16b 色块点击弹自绘 iOS 风色盘（方块+彩虹条+HEX），
+                   行内色号框直接输入，「默认」恢复主题默认色；None 不落 config -->
+              <div class="setting-row color-row">
+                <span>专注色</span>
+                <span class="color-ctl">
+                  <button class="color-swatch" data-color="work" aria-label="专注色色盘"></button>
+                  <input type="text" class="color-hex" data-color="work" value="#ff3b30" maxlength="7" spellcheck="false" aria-label="专注色色号">
+                  <button class="color-reset" data-color="work" title="恢复默认">默认</button>
+                </span>
+              </div>
+              <div class="setting-row color-row">
+                <span>休息色</span>
+                <span class="color-ctl">
+                  <button class="color-swatch" data-color="short_break" aria-label="休息色色盘"></button>
+                  <input type="text" class="color-hex" data-color="short_break" value="#34c759" maxlength="7" spellcheck="false" aria-label="休息色色号">
+                  <button class="color-reset" data-color="short_break" title="恢复默认">默认</button>
+                </span>
+              </div>
+              <div class="setting-row color-row">
+                <span>长休色</span>
+                <span class="color-ctl">
+                  <button class="color-swatch" data-color="long_break" aria-label="长休色色盘"></button>
+                  <input type="text" class="color-hex" data-color="long_break" value="#0a84ff" maxlength="7" spellcheck="false" aria-label="长休色色号">
+                  <button class="color-reset" data-color="long_break" title="恢复默认">默认</button>
+                </span>
+              </div>
+            </div>
+            <!-- v11：快捷键改键（单行分组卡无标题=既有拍板先例）；键帽点击即录，× 一键关闭 -->
+            <div class="group-card">
+              <div class="setting-row hotkey-row">
+                <span>快捷键</span>
+                <span class="hotkey-ctl">
+                  <button id="hotkey-cap" class="hotkey-cap" title="点击录制新快捷键">…</button>
+                  <button id="hotkey-off" class="hotkey-off" title="关闭快捷键" aria-label="关闭快捷键">
+                    <svg viewBox="0 0 10 10" width="9" height="9"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </section>
+          <!-- v16b 自绘 iOS 风色盘（抽屉内浮层）：上部饱和度×明度方块、下部彩虹色相条、
+               底部 HEX+完成；三行共用，点色块打开并锚定该阶段 -->
+          <div class="color-pop" hidden>
+            <div class="cp-sv"><div class="cp-dot"></div></div>
+            <div class="cp-hue"><div class="cp-hue-dot"></div></div>
+            <div class="cp-foot">
+              <input class="cp-hex" maxlength="7" spellcheck="false" aria-label="色号">
+              <button class="cp-done">完成</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右键菜单（自绘苹果风，主题跟随 CSS 变量） -->
+    <div id="ctx-menu" class="ctx-menu" role="menu" aria-hidden="true">
+      <button id="ctx-toggle" class="ctx-item" role="menuitem">开始</button>
+      <button id="ctx-reset" class="ctx-item" role="menuitem">重置</button>
+      <button id="ctx-settings" class="ctx-item" role="menuitem">设置…</button>
+      <button id="ctx-autostart" class="ctx-item" role="menuitemcheckbox" aria-checked="false">开机自启</button>
+      <button id="ctx-quit" class="ctx-item" role="menuitem">退出</button>
+    </div>
+  </body>
+</html>

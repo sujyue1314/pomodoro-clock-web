@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-material="liquid_glass">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>番茄钟菜单</title>
+    <script type="module" crossorigin src="/assets/traymenu-_OBBtCHT.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/menu-COn12ifz.js">
+    <link rel="stylesheet" crossorigin href="/assets/menu-DURpn6do.css">
+  </head>
+  <body class="tray-menu-page">
+    <!-- 复用应用内 ctx-menu 苹果风；四项：开始/暂停（动态文案）、设置…、开机自启✓、退出 -->
+    <div id="tray-menu" class="ctx-menu open" role="menu" aria-label="托盘菜单">
+      <button id="tm-toggle" class="ctx-item" role="menuitem">开始</button>
+      <button id="tm-reset" class="ctx-item" role="menuitem">重置</button>
+      <button id="tm-settings" class="ctx-item" role="menuitem">设置…</button>
+      <button id="tm-autostart" class="ctx-item" role="menuitemcheckbox" aria-checked="false">开机自启</button>
+      <button id="tm-quit" class="ctx-item" role="menuitem">退出</button>
+    </div>
+  </body>
+</html>
